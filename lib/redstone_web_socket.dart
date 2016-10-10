@@ -6,7 +6,7 @@ import "dart:mirrors";
 import "package:redstone/redstone.dart";
 import "package:shelf/shelf.dart" as shelf;
 import "package:shelf_web_socket/shelf_web_socket.dart";
-import 'package:http_parser/http_parser.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import "package:di/di.dart";
 import 'package:logging/logging.dart';
 
@@ -118,7 +118,7 @@ class WebSocketSession {
   final DynamicMap attributes = new DynamicMap({});
 
   ///The web socket connection
-  final CompatibleWebSocket connection;
+  final WebSocketChannel connection;
 
   ///The subprotocol associated with this web socket connection
   final String protocol;
@@ -261,7 +261,7 @@ class _EndPoint {
 
 }
 
-class _MockServerWebSocket extends Stream implements CompatibleWebSocket {
+class _MockServerWebSocket extends Stream implements WebSocketSink {
 
   final StreamController _in = new StreamController();
   final StreamController _out = new StreamController();
@@ -370,13 +370,13 @@ void _installClasses(Manager manager, List<_EndPoint> endPoints,
     var endPointAllowedOrigins = metadata.allowedOrigins != null ?
     metadata.allowedOrigins : allowedOrigins;
 
-    var onConnection = (CompatibleWebSocket websocket, String protocol) {
+    var onConnection = (WebSocketChannel websocket, String protocol) {
 
       var session = new WebSocketSession(websocket, protocol);
 
       _invokeHandler(objMirror, onOpen, [session]);
 
-      websocket.listen((event) {
+      websocket.stream.listen((event) {
         _invokeHandler(objMirror, onMessage, [event, session]);
       }, onError: (error) {
         _invokeHandler(objMirror, onError, [error, session]);
